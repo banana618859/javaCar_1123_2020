@@ -1,8 +1,12 @@
 package com.example.demo.Controller;
 
 import com.example.demo.entity.Result;
+import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.entity.pageFun;
+import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import jdk.nashorn.internal.ir.RuntimeNode;
+import org.apache.catalina.connector.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
@@ -24,28 +28,26 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
 
-
+@ResponseBody
 @Controller
 public class hello {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @ResponseBody
     @GetMapping("/aaa")
     public String aaa(){
         return "aaa";
     }
 
-    @ResponseBody
     @PostMapping("/addUser")
     public Result addUser(@RequestBody User user){
-        String sql = "insert into students(username,password,sex,role) values(?,?,?,?)";
-        int rel = jdbcTemplate.update(sql,user.getUsername(),user.getPassword(),user.getSex(),user.getRole());
+        String sql = "insert into users(username,password,myRoleId) values(?,?,?)";
+        int rel = jdbcTemplate.update(sql,user.getUsername(),user.getPassword(),user.getRole());
         System.out.println("update-rel"+rel);
         Result result = new Result();
         if(rel==1){
-            String sqla = "select * from students";
+            String sqla = "select * from users";
             List<Map<String, Object>> list =jdbcTemplate.queryForList(sqla);
             result.setCode(200);
             result.setData(list);
@@ -57,10 +59,9 @@ public class hello {
         return result;
     }
 
-    @ResponseBody
     @PostMapping("/deleteUser")
     public Result deleteUser(@RequestBody User user){
-        String sql = "delete from students where id=?";
+        String sql = "delete from users where id=?";
         int rel = jdbcTemplate.update(sql,user.getId());
         System.out.println("update-rel"+rel);
         Result result = new Result();
@@ -74,11 +75,10 @@ public class hello {
         return result;
     }
 
-    @ResponseBody
     @PostMapping("/updateUser")
     public Result updateUser(@RequestBody User user){
         System.out.println(user.print());
-        String sql = "update students set username=?, password=?,sex=? where id=?";
+        String sql = "update users set username=?, password=?,sex=? where id=?";
         int rel = jdbcTemplate.update(sql,user.getUsername(),user.getPassword(),user.getSex(),user.getId());
         System.out.println("update-rel"+rel);
         Result result = new Result();
@@ -92,14 +92,13 @@ public class hello {
         return result;
     }
 
-    @ResponseBody
     @PostMapping("/login")
     public Result login(@RequestBody User user){
 //        String sql = "SELECT * FROM students ? ";
         Result rel = new Result();
         try {
             System.out.println("one user:"+user.print());
-            String sql = "SELECT * FROM students WHERE username=? and password=? and role=?";
+            String sql = "SELECT * FROM users WHERE username=? and password=? and myRoleId=?";
             List<Map<String, Object>> list= jdbcTemplate.queryForList(sql,user.getUsername(), user.getPassword(), user.getRole());
             System.out.println("one person:"+list);
             if(list.size()==0){
@@ -119,15 +118,15 @@ public class hello {
         }
 
     }
-    @ResponseBody
+
     @RequestMapping("/hello")
     public Result hello(@RequestBody pageFun pageobj){
         System.out.println("list:"+pageobj.getSkipNum()+","+pageobj.getPageSize());
         int lessNum = (pageobj.getSkipNum()-1)*pageobj.getPageSize();
         int lastNum = pageobj.getSkipNum() * pageobj.getPageSize();
 
-        String sql = "SELECT * FROM students LIMIT ?,?";
-        String sql2 = "SELECT count(*) FROM students;";
+        String sql = "SELECT * FROM users LIMIT ?,?";
+        String sql2 = "SELECT count(*) FROM users;";
         System.out.println("list2:"+lessNum+","+lastNum);
         //写法很多种
         //下面列举两种写法，都可以实现
@@ -196,7 +195,7 @@ public class hello {
                     data.setUsername(String.valueOf(row.getCell(1).getStringCellValue()));
                     data.setPassword(row.getCell(2).getStringCellValue());
                     data.setSex(row.getCell(3).getStringCellValue());
-                    data.setRole(row.getCell(4).getStringCellValue());
+                    data.setRole(Integer.parseInt(row.getCell(4).getStringCellValue()));
                     importDatas.add(data);
 
 //                  data.setAge(Integer.valueOf((int) row.getCell(3).getNumericCellValue()));
@@ -223,5 +222,119 @@ public class hello {
         }
     }
 
+
+    //    保存角色
+    @PostMapping("/saveRole")
+    public Result saveRole(@RequestBody Role role){
+        //        String sql = "SELECT * FROM students ? ";
+        Result rel = new Result();
+        try {
+            System.out.println("one role:"+role.toString());
+            String sql = "insert into role(name,roleRight) values(?,?)";
+            int updateRel = jdbcTemplate.update(sql,role.getName(),role.getRoleRight());
+            System.out.println("update-rel"+updateRel);
+            if(updateRel==0){
+                rel.setCode(500);
+                rel.setMsg("保存失败");
+            }else {
+                rel.setCode(200);
+                rel.setMsg("保存成功");
+            }
+            return rel;
+        }catch ( Exception err){
+            System.out.println("err:"+err);
+            rel.setCode(500);
+            rel.setMsg("保存失败");
+            return rel;
+        }
+
+    }
+
+    //    删除角色
+    @PostMapping("/delRoleById")
+    public Result delRoleById(@RequestBody Role role){
+        //        String sql = "SELECT * FROM students ? ";
+//        int id = Integer.parseInt(request.getParameter("id"));
+        Result rel = new Result();
+        try {
+            System.out.println("one role id:"+ role.getId());
+            String sql = "delete from role where id=?";
+            int updateRel = jdbcTemplate.update(sql,role.getId());
+            System.out.println("del-rel"+updateRel);
+            if(updateRel==0){
+                rel.setCode(500);
+                rel.setMsg("删除失败");
+            }else {
+                rel.setCode(200);
+                rel.setMsg("删除成功");
+            }
+            return rel;
+        }catch ( Exception err){
+            System.out.println("err:"+err);
+            rel.setCode(500);
+            rel.setMsg("保存失败");
+            return rel;
+        }
+
+    }
+
+    // 获取所有角色
+    @RequestMapping("/getAllRole")
+    public Result getAllRole(){
+//        @RequestBody pageFun pageobj
+//        System.out.println("list:"+pageobj.getSkipNum()+","+pageobj.getPageSize());
+//        int lessNum = (pageobj.getSkipNum()-1)*pageobj.getPageSize();
+//        int lastNum = pageobj.getPageSize();
+
+//        String sql = "SELECT * FROM cat LIMIT ?,?";
+//        String sql2 = "SELECT count(*) FROM cat";
+        String sql = "SELECT * FROM role";
+        List<Map<String, Object>> list= jdbcTemplate.queryForList(sql);
+//        System.out.println("list2:"+lessNum+","+lastNum);
+        //写法很多种
+        //下面列举两种写法，都可以实现
+        //List<User> list= jdbcTemplate.query(sql,new Object[]{userName}, new BeanPropertyRowMapper(User.class));
+
+//        List<Map<String, Object>> list= jdbcTemplate.queryForList(sql,lessNum,lastNum);
+//        int count= jdbcTemplate.queryForObject(sql2, Integer.class);
+//        System.out.println("list:"+list.size()+","+count);
+        // 返回结果集
+        Result rel = new Result();
+        rel.setMsg("查询成功");
+        rel.setCode(200);
+//        rel.setTotal(count);
+        rel.setData(list);
+        // mysql分页查询： https://www.iteye.com/blog/qimo601-1634748
+        // MySQL中count函数查总条数：https://www.cnblogs.com/rocky-fang/p/5660890.html
+        // 慕课jdbcTemplate 链接：https://www.imooc.com/article/46879
+        return rel;
+    }
+
+    // 获取所有角色id和name
+    @RequestMapping("/getAllRoleName")
+    public Result getAllRoleName(){
+        String sql = "SELECT id,name FROM role";
+        List<Map<String, Object>> list= jdbcTemplate.queryForList(sql);
+        // 返回结果集
+        Result rel = new Result();
+        rel.setMsg("查询成功");
+        rel.setCode(200);
+        rel.setData(list);
+        return rel;
+    }
+
+    // 获取所有权限，根绝角色id
+    @PostMapping("/getRightByRoleId")
+    public Result getRightByRoleId(@RequestBody User user){
+        String sql = "SELECT * FROM role where id=?";
+        System.out.println("user.getRole():"+user.getRole());
+        List<Map<String, Object>> list= jdbcTemplate.queryForList(sql, user.getRole());
+        // 返回结果集
+        Result rel = new Result();
+        rel.setMsg("查询成功");
+        rel.setCode(200);
+        rel.setData(list);
+        return rel;
+    }
 }
 

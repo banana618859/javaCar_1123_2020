@@ -5,7 +5,7 @@ public class User {
     private String username;
     private String password;
     private String sex;
-    private String role;
+    private int role;
 
    public int getId() {
         return id;
@@ -38,11 +38,12 @@ public class User {
     public void setSex(String sex) {
         this.sex = sex;
     }
-    public String getRole() {
+
+    public int getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(int role) {
         this.role = role;
     }
 
@@ -58,6 +59,6 @@ public class User {
     }
 
     public String print(){
-        return "user:"+id+","+username+","+password+","+sex;
+        return "user:"+id+","+username+","+password+","+sex+","+role;
     }
 }
