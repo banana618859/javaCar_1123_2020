@@ -22,18 +22,21 @@ import java.util.Map;
 @Controller
 @ResponseBody
 public class Cat {
-    Result rel = new Result();
+//    Result rel = new Result();
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    private Result rel;
+
 
     @PostMapping("/importExcelbb")
     public Result importExcel( @RequestParam("file") MultipartFile file, HttpServletRequest request) {
         System.out.println("进入导入excel函数-22--"+request.getParameter("owner"));
         int own = Integer.parseInt(request.getParameter("owner"));
-        Result rel = new Result();
+        // Result rel = new Result();
         if (file.isEmpty()) {
             rel.setCode(601);
             rel.setMsg("文件为空");
+            return rel;
         }
         try {
             //实体的集合，把csv中的列装在list里。

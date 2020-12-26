@@ -78,8 +78,8 @@ public class hello {
     @PostMapping("/updateUser")
     public Result updateUser(@RequestBody User user){
         System.out.println(user.print());
-        String sql = "update users set username=?, password=?,sex=? where id=?";
-        int rel = jdbcTemplate.update(sql,user.getUsername(),user.getPassword(),user.getSex(),user.getId());
+        String sql = "update users set username=?, password=?,myRoleId=? where id=?";
+        int rel = jdbcTemplate.update(sql,user.getUsername(),user.getPassword(),user.getRole(),user.getId());
         System.out.println("update-rel"+rel);
         Result result = new Result();
         if(rel==1){
@@ -234,6 +234,33 @@ public class hello {
             int updateRel = jdbcTemplate.update(sql,role.getName(),role.getRoleRight());
             System.out.println("update-rel"+updateRel);
             if(updateRel==0){
+                rel.setCode(500);
+                rel.setMsg("保存失败");
+            }else {
+                rel.setCode(200);
+                rel.setMsg("保存成功");
+            }
+            return rel;
+        }catch ( Exception err){
+            System.out.println("err:"+err);
+            rel.setCode(500);
+            rel.setMsg("保存失败");
+            return rel;
+        }
+
+    }
+
+    //    保存角色
+    @PostMapping("updateRole")
+    public Result updateRole(@RequestBody Role role){
+        //        String sql = "SELECT * FROM students ? ";
+        Result rel = new Result();
+        try {
+            System.out.println("one role:"+role.toString());
+            String sql = "update role set name=?, roleRight=? where id=?";
+            int count = jdbcTemplate.update(sql,role.getName(),role.getRoleRight(),role.getId());
+            System.out.println("update-rel"+count);
+            if(count==0){
                 rel.setCode(500);
                 rel.setMsg("保存失败");
             }else {
